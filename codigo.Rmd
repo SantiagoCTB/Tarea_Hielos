@@ -1,0 +1,39 @@
+---
+title: "Tarea Hielos"
+author: "Santiago Carvajal Torres - Sofía Cuartas"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE,message = FALSE)
+```
+
+```{r}
+library(readxl)
+library(kableExtra)
+library(ggplot2)
+library(magrittr)
+```
+
+
+```{r lectura}
+datos <- read_excel("datos.xlsx")
+  
+rbind(head(datos,5), tail(datos,5)) %>%
+  kbl() %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+
+```
+
+```{r}
+colores <- c("10" = "blue", "20" = "red","30" = "yellow")
+
+ggplot(datos, aes(x = Tiempo, y = Volumen_derretido, color = as.factor(Valor_inicial))) +
+  geom_point() +
+  labs(x = "Tiempo", y = "Volumen derretido") +
+  ggtitle("Volumen Derretido en Función del Tiempo") +
+  scale_color_manual(name = "Valor Inicial", values = colores) +
+  guides(color = guide_legend(override.aes = list(shape = 19))) 
+```
+
