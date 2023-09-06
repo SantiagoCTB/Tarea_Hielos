@@ -1,9 +1,30 @@
 ---
-title: "Tarea Hielos"
-author: "Santiago Carvajal Torres - Sofía Cuartas"
 output: pdf_document
 ---
 
+\begin{titlepage}
+\centering
+{\includegraphics[width=0.5\textwidth]{LOGOU.png}\par}
+\vspace{1cm}
+{\bfseries\LARGE Universidad Nacional De Colombia\par}
+\vspace{1cm}
+{\bfseries\LARGE Trabajo 1 - Hielos\par}
+\vspace{1cm}
+{\bfseries\LARGE Modelos no lineales\par}
+\vfill
+{\Large Autores: \par}
+{\Large Sofía Cuartas\\ Santiago Carvajal Torres \par}
+\vfill
+{\Large Entregado a: \par}
+{\Large Juan Carlos Correa Morales \par}
+\vfill
+{\Large 13 de Septiembre 2023 \par}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+
+\newpage
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,warning = FALSE,message = FALSE)
 ```
@@ -18,11 +39,21 @@ library(magrittr)
 
 ```{r lectura}
 datos <- read_excel("datos.xlsx")
-  
-rbind(head(datos,5), tail(datos,5)) %>%
-  kbl() %>%
+
+datos_10ml <- datos[which(datos$Valor_inicial=='10'),]
+datos_20ml <- datos[which(datos$Valor_inicial=='20'),]
+datos_30ml <- datos[which(datos$Valor_inicial=='30'),]
+
+rbind(head(datos,6)) %>%
+  kbl(caption = "Primeros datos en la base de datos") %>%
   kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
   kable_classic()
+
+```
+
+\subsection{Gráfico derretimiento muestras 10ml}
+
+```{r}
 
 ```
 
