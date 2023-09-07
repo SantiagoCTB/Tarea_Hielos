@@ -34,8 +34,10 @@ library(readxl)
 library(kableExtra)
 library(ggplot2)
 library(magrittr)
+library(dplyr)
 ```
 
+\section{Análisis descriptivo}
 
 ```{r lectura}
 datos <- read_excel("datos.xlsx")
@@ -51,11 +53,7 @@ rbind(head(datos,6)) %>%
 
 ```
 
-\subsection{Gráfico derretimiento muestras 10ml}
-
-```{r}
-
-```
+\subsection{Gráfico de los datos}
 
 ```{r}
 colores <- c("10" = "blue", "20" = "red","30" = "yellow")
