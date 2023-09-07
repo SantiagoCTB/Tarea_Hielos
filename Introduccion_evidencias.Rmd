@@ -1,0 +1,9 @@
+---
+output: pdf_document
+---
+
+# Motivación
+
+La modelación de la tasa de descongelamiento de hielo es de suma importancia en el contexto actual de cambio climático y sus consecuencias globales. Los polos terrestres y las regiones glaciares están experimentando un aumento en la velocidad de descongelamiento debido al aumento de las temperaturas, lo que tiene un impacto directo en el nivel del mar y en los ecosistemas circundantes. La modelación de esta tasa de descongelamiento nos permite comprender mejor cómo el calentamiento global afecta a estas áreas y anticipar sus futuros efectos.
+
+Además, esta modelación es esencial para la toma de decisiones políticas y estratégicas a nivel internacional. Los países costeros necesitan planificar la adaptación a los cambios en el nivel del mar, mientras que los científicos utilizan estos modelos para prever cómo afectará el descongelamiento a la biodiversidad y los recursos naturales. En resumen, la modelación de la tasa de descongelamiento de hielo no solo es un indicador clave del cambio climático, sino que también proporciona información crucial para abordar los desafíos que plantea el derretimiento de los glaciares y las capas de hielo.
