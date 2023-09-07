@@ -66,3 +66,41 @@ ggplot(datos, aes(x = Tiempo, y = Volumen_derretido, color = as.factor(Valor_ini
   guides(color = guide_legend(override.aes = list(shape = 19))) 
 ```
 
+
+\section{Modelos}
+
+\subsection{Modelo logístico}
+
+```{r}
+library(GenSA)
+modelo <- function(Tiempo, b0, b1) {
+  b0 / ((1 - exp(b1 * Tiempo))^(-1))
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  predicciones <- modelo(datos$Tiempo, b0, b1)
+  error <- sum((datos$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100, -100,    # límite inferior para b0 y b1
+                    100, 100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_logistico <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos <- resultado_optimizacion_logistico$par
+
+valores_optimos
+
+```
+
