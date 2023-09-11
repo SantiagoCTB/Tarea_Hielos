@@ -2,8 +2,159 @@
 output: pdf_document
 ---
 
-# Motivación
+\begin{titlepage}
+\centering
+{\includegraphics[width=0.5\textwidth]{LOGOU.png}\par}
+\vspace{1cm}
+{\bfseries\LARGE Universidad Nacional De Colombia\par}
+\vspace{1cm}
+{\bfseries\LARGE Trabajo 1 - Hielos\par}
+\vspace{1cm}
+{\bfseries\LARGE Modelos no lineales\par}
+\vfill
+{\Large Autores: \par}
+{\Large Sofía Cuartas García\\ Santiago Carvajal Torres \par}
+\vfill
+{\Large Entregado a: \par}
+{\Large Juan Carlos Correa Morales \par}
+\vfill
+{\Large 13 de Septiembre 2023 \par}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+
+\newpage
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning = FALSE,message = FALSE,fig.height = 3,fig.width = 4,fig.align = "center")
+```
+
+```{r}
+library(readxl)
+library(kableExtra)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+library(GenSA)
+```
+
+# Introducción
 
 La modelación de la tasa de descongelamiento de hielo es de suma importancia en el contexto actual de cambio climático y sus consecuencias globales. Los polos terrestres y las regiones glaciares están experimentando un aumento en la velocidad de descongelamiento debido al aumento de las temperaturas, lo que tiene un impacto directo en el nivel del mar y en los ecosistemas circundantes. La modelación de esta tasa de descongelamiento nos permite comprender mejor cómo el calentamiento global afecta a estas áreas y anticipar sus futuros efectos.
 
 Además, esta modelación es esencial para la toma de decisiones políticas y estratégicas a nivel internacional. Los países costeros necesitan planificar la adaptación a los cambios en el nivel del mar, mientras que los científicos utilizan estos modelos para prever cómo afectará el descongelamiento a la biodiversidad y los recursos naturales. En resumen, la modelación de la tasa de descongelamiento de hielo no solo es un indicador clave del cambio climático, sino que también proporciona información crucial para abordar los desafíos que plantea el derretimiento de los glaciares y las capas de hielo.
+
+
+# Marco Teórico.
+
+
+## Estudios previos
+
+Numerosos estudios científicos han documentado este proceso y han arrojado resultados alarmantes en las últimas décadas. Por ejemplo, investigaciones realizadas por el Panel Intergubernamental sobre Cambio Climático (IPCC) indican que el derretimiento de los casquetes polares, como el de Groenlandia y la Antártida, ha contribuido significativamente al aumento del nivel del mar en todo el mundo. Se estima que el nivel del mar ha aumentado aproximadamente 3.3 milímetros por año en promedio desde la década de 1990, y se prevé que esta tasa aumente en el futuro.
+
+Además, los estudios han revelado que el descongelamiento de glaciares en regiones montañosas también está ocurriendo a un ritmo acelerado. Estos glaciares proporcionan agua dulce vital para millones de personas que dependen de los ríos alimentados por ellos. El derretimiento de estos glaciares plantea preocupaciones sobre la disponibilidad de agua en el futuro, así como sobre los riesgos de deslizamientos de tierra y deslizamientos de hielo en las áreas circundantes. Los científicos están utilizando una variedad de herramientas, incluyendo imágenes satelitales y perforaciones en el hielo, para monitorear y comprender mejor estos cambios en los casquetes polares y glaciares, con la esperanza de tomar medidas adecuadas para abordar los desafíos que plantea el descongelamiento de estas importantes fuentes de agua dulce y la contribución al cambio climático.
+
+## Bases teóricas y conceptuales. 
+
+El paso del estado sólido al estado líquido del agua, conocido como fusión, es un proceso fundamental en la ciencia y tiene bases teóricas y conceptuales bien establecidas. Se presentan alguna de las bases teóricas y conceptuales claves de este proceso:
+
+**Teoría Cinética Molecular:** La teoría cinética molecular sostiene que todas las sustancias están compuestas por partículas en constante movimiento. En el caso del agua, estas partículas son moléculas de $H_2O$. En el estado sólido, estas moléculas están organizadas en una estructura cristalina en la que las fuerzas intermoleculares mantienen a las moléculas en posiciones fijas y cercanas unas a otras.
+
+**Energía Interna:** La energía interna de una sustancia se relaciona con la energía cinética y potencial de sus partículas. En el estado sólido, las moléculas tienen una energía interna relativamente baja, y sus movimientos son vibratorios alrededor de posiciones de equilibrio. A medida que se agrega energía al sistema, como calor, la energía interna de las moléculas aumenta.
+
+**Punto de Fusión:** Cada sustancia tiene un punto de fusión característico, que es la temperatura a la que las fuerzas intermoleculares en el estado sólido se debilitan lo suficiente como para permitir la transición al estado líquido. Para el agua, su punto de fusión a la presión normal es de 0 grados Celsius (32 grados Fahrenheit).
+
+**Energía de Fusión:** Para que una sustancia pase del estado sólido al líquido, se debe suministrar una cantidad específica de energía llamada calor de fusión. En el caso del agua, se requiere una gran cantidad de calor para romper las fuerzas intermoleculares en la estructura cristalina y permitir que las moléculas se desplacen libremente en el estado líquido.
+
+**Cambios en la Estructura:** Durante el proceso de fusión, las moléculas de agua en el estado sólido comienzan a moverse con mayor libertad a medida que se les suministra calor adicional. Esto conduce a una ruptura gradual de la estructura cristalina y a la formación de un líquido en el que las moléculas están más separadas y tienen mayor energía cinética.
+
+
+En resumen, el proceso de fusión del agua se basa en principios de la teoría cinética molecular y se caracteriza por cambios en la energía interna, la estructura molecular y la adición de calor para superar las fuerzas intermoleculares en el estado sólido. Este proceso es fundamental tanto en la naturaleza como en diversas aplicaciones tecnológicas y científicas.
+
+# Objetivo
+
+Ajustar un modelo de decrecimiento que tenga como covariable los minutos que este estuvo expuesto a temperatura ambiente y como variable respuesta el volumen de hielo derretido, además se espera que el modelo alcance un buen ajuste.
+
+# Experimento 
+
+## Prueba piloto
+
+Se decidió llevar a cabo una prueba piloto con el propósito de determinar el tiempo apropiado para tomar medidas en el experimento principal, que involucraba llenar recipientes con 10, 20 y 30 ml de agua, congelarlos y luego observar cuánto se derretía. La prueba piloto fue esencial por las siguientes razones:
+
+**Determinar el intervalo de tiempo adecuado:** Antes de comenzar el experimento principal, necesitabamos establecer cuánto tiempo debía transcurrir antes de medir la muestra. Sacar las muestras demasiado pronto significaría que aún estarían en gran parte congeladas, lo que arrojaría resultados poco útiles. En contraste, retirarlas demasiado tarde podría resultar en que el hielo se derritiera por completo, lo que también sería inapropiado. La prueba piloto permitió encontrar un equilibrio en el tiempo de espera.
+
+**Evaluar la variabilidad:** Realizando varias pruebas con diferentes cantidades de agua **(10, 20 y 30 ml)**, pudimos determinar si la cantidad de agua tenía alguna influencia en el tiempo que tardaba en derretirse el hielo. Esta evaluación ayudó a anticipar si sería necesario ajustar las expectativas o el enfoque para las mediciones posteriores en el experimento principal.
+
+**Ajustar el procedimiento:** La prueba piloto también brindó la oportunidad de realizar ajustes en el procedimiento experimental si fuera necesario. Por ejemplo, si se hubiera observado que todas las muestras se derretían de manera similar en un corto período de tiempo, podría haberse decidido usar recipientes más grandes o modificar la temperatura ambiente de congelación para obtener resultados más interesantes y significativos.
+
+Con los resultados de la prueba piloto, pudimos identificar que había cierta variabilidad en los tiempos de inicio y finalización para cada muestra. Esto sugiere que factores como la temperatura ambiente o las diferencias en la cantidad de agua pueden influir en el proceso de derretimiento del hielo. Basándose en estos datos, decidimos que los tiempos adecuados para tomar las muestras eran en **20, 40 y 60 minutos**.
+
+```{r}
+piloto <- read_excel("piloto.xlsx")
+
+piloto %>%
+  kbl(caption = "Prueba piloto") %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+```
+
+
+
+El experimento se puede ver como un diseño de dos factores cada uno con tres niveles fijos y se decidió hacer cuatri replicas.
+
+## Descripción del experimento.
+
+Para garantizar igualdad de condiciones en todas las tomas se utilizaron recipientes de plástico con tapa de una capacidad máxima de 40 ml, en ellos se almacenaron tres diferentes volúmenes de agua (10, 20 y 30 ml) dicha agua provenía la misma botella de agua potable, los volúmenes se midieron con una jeringa, luego se almacenaron en el congelador de un refrigerador estándar hasta que se formara completamente el hielo; con la ayuda de un temporizador se midieron tres diferentes tiempos (20, 40 y 60 minutos) en cuanto sonaba el temporizador se media (con la misma jeringa con que se llenaron los recipientes) el volumen de agua resultante y se registraba el dato; en la figura uno se muestra parte del proceso.
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[]{registro_fotografico.png}
+    \caption{Evidencia fotográfica del experimento}
+\end{figure}
+
+
+# Análisis descriptivo
+
+```{r lectura}
+datos <- read_excel("datos.xlsx")
+
+datos_10ml <- datos[which(datos$Valor_inicial=='10'),]
+datos_20ml <- datos[which(datos$Valor_inicial=='20'),]
+datos_30ml <- datos[which(datos$Valor_inicial=='30'),]
+
+rbind(head(datos,6)) %>%
+  kbl(caption = "Primeros datos en la base de datos") %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+
+```
+
+## Resumen de los datos
+
+Se peude observar que el valor inicial de agua en los recipientes tiene un impacto significativo en el tiempo de derretimiento del hielo. Los recipientes con menos agua tienden a tener un tiempo de derretimiento más corto, mientras que los recipientes con más agua tienen un tiempo de derretimiento más largo. Además, la variabilidad en las mediciones puede variar según la cantidad de agua presente, siendo más alta en los recipientes con 20 ml de agua como podemos ver en su desviación estándar.
+
+```{r}
+resumen <- aggregate(Volumen_derretido ~ Valor_inicial + Tiempo, datos, function(x) c(Media = mean(x), DesviacionEstandar = sd(x)))
+
+resumen <- data.frame(Valor_inicial = resumen$Valor_inicial,Tiempo = resumen$Tiempo,resumen$Volumen_derretido)
+
+resumen[order(resumen$Valor_inicial),] %>%
+  kbl(caption = "Resumen de los datos",row.names = FALSE) %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+
+```
+
+
+```{r,fig.height=4,fig.width=6}
+colores <- c("10" = "blue", "20" = "red","30" = "yellow")
+
+ggplot(datos, aes(x = Tiempo, y = Volumen_derretido, color = as.factor(Valor_inicial))) +
+  geom_point() +
+  labs(x = "Tiempo", y = "Volumen derretido") +
+  ggtitle("Volumen Derretido en Función del Tiempo") +
+  scale_color_manual(name = "Valor Inicial", values = colores) +
+  guides(color = guide_legend(override.aes = list(shape = 19))) 
+```
+
