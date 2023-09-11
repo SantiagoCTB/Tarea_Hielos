@@ -132,7 +132,7 @@ rbind(head(datos,6)) %>%
 
 ## Resumen de los datos
 
-Se peude observar que el valor inicial de agua en los recipientes tiene un impacto significativo en el tiempo de derretimiento del hielo. Los recipientes con menos agua tienden a tener un tiempo de derretimiento más corto, mientras que los recipientes con más agua tienen un tiempo de derretimiento más largo. Además, la variabilidad en las mediciones puede variar según la cantidad de agua presente, siendo más alta en los recipientes con 20 ml de agua como podemos ver en su desviación estándar.
+Se puede observar que el valor inicial de agua en los recipientes tiene un impacto significativo en el tiempo de derretimiento del hielo. Los recipientes con menos agua tienden a tener un tiempo de derretimiento más corto, mientras que los recipientes con más agua tienen un tiempo de derretimiento más largo. Además, la variabilidad en las mediciones puede variar según la cantidad de agua presente, siendo más alta en los recipientes con 20 ml de agua como podemos ver en su desviación estándar.
 
 ```{r}
 resumen <- aggregate(Volumen_derretido ~ Valor_inicial + Tiempo, datos, function(x) c(Media = mean(x), DesviacionEstandar = sd(x)))
@@ -146,6 +146,13 @@ resumen[order(resumen$Valor_inicial),] %>%
 
 ```
 
+Más medidas de resumen numericas se muestran a continuación
+
+```{r}
+by(datos[,3], datos[,1], summary)
+```
+
+Esto graficamente es:
 
 ```{r,fig.height=4,fig.width=6}
 colores <- c("10" = "blue", "20" = "red","30" = "yellow")
@@ -157,4 +164,485 @@ ggplot(datos, aes(x = Tiempo, y = Volumen_derretido, color = as.factor(Valor_ini
   scale_color_manual(name = "Valor Inicial", values = colores) +
   guides(color = guide_legend(override.aes = list(shape = 19))) 
 ```
+
+# Modelos 
+
+$$Y(t) = Y(0)\times e^{-\beta_0t}$$
+
+```{r}
+
+
+# Definir la función de ajuste
+modelo <- function(Valor_inicial, Tiempo, b0) {
+  Valor_inicial*exp(b0*Tiempo)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  predicciones <- modelo(datos_20ml$Valor_inicial, datos_20ml$Tiempo, b0)
+  error <- sum((datos_20ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,    # límite inferior para b0 y b1
+                    100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_20ml <- GenSA(fn = objetivo,
+                                lower = limites[,1 ],
+                                upper = limites[,2 ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_20ml <- resultado_optimizacion_20ml$par
+
+```
+
+
+
+
+
+```{r}
+ggplot(datos_20ml, aes(x = Tiempo)) +
+  geom_point(aes(y = Volumen_derretido), color = "red") +
+  geom_line(aes(y =  modelo(datos_20ml$Valor_inicial, datos_20ml$Tiempo, valores_optimos_20ml)), color = "red") +
+  labs(
+    x = "Tiempo",
+    y = "Volumen Derretido",
+    title = "Gráfico de Volumen Derretido vs. Tiempo"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+# Modelos
+
+En el gráfico de los datos, las diferentes medidas para las cuales fueron tomados los datos, tienen un comportamiento diferente, por lo se decidió ajustar modelos diferentes para los recipientes con 10, 20 y 30 ml. Además de esto utilizamos dos modelos diferentes, como Bertalanffy y Gompertz, dado que en término de sus ecuaciones son más diferentes.
+
+```{r,error=TRUE,echo=TRUE}
+modelo_logistico <- nls(Volumen_derretido~SSlogis(Tiempo,Asym,b2,b3),data = datos_10ml)
+```
+
+Dado que la función **nls** ni **Optim** no converge por la cantidad de datos, se decidió ajustar los modelos con la librería **GENSA** dado que usualmente tiene mejor estabilidad que las otras funciones mencionadas anteriormente.
+
+## Modelo para 10 ML
+
+###  Modelo logistico
+
+```{r,echo=TRUE}
+
+# Definir la función de ajuste
+modelo <- function(Tiempo, b0, b1) {
+  b0 / ((1 - exp(b1 * Tiempo))^(-1))
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  predicciones <- modelo(datos_10ml$Tiempo, b0, b1)
+  error <- sum((datos_10ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100, -100,    # límite inferior para b0 y b1
+                    100, 100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_logistico_10ml <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_logistico_10ml <- resultado_optimizacion_logistico_10ml$par
+
+
+valores_optimos_logistico_10ml
+
+```
+
+
+```{r}
+modelo_logistico_10ml <- data.frame(Tiempo = c(20,40,60) ,predic = NA)
+
+b0 <- -15.509815873
+b1 <- 0.007374075
+
+for (i in 1:3) {
+  Tiempo = c(20,40,60)
+  modelo_logistico_10ml$predic[i] <- b0 / ((1 - exp(b1 * (Tiempo[i])))^(-1))
+}
+
+datos_10ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "brown")+
+  geom_line(data=modelo_logistico_10ml,aes(x=Tiempo,y=predic))+
+  labs(title="Modelo logístico")
+
+```
+
+
+
+###  Modelo bertalanffy
+
+$$Y_i = \beta_0(1-\beta_1e^{-\beta_2*t_i})^3$$
+
+
+```{r, echo = TRUE}
+# Definir la función de ajuste
+modelo <- function(Tiempo, b0, b1, b2) {
+  b0 * ((1 - b1 * exp(-b2 * Tiempo))^3)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  b2 <- params[3]
+  predicciones <- modelo(datos_10ml$Tiempo, b0, b1,b2)
+  error <- sum((datos_10ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,-100 , -100,    # límite inferior para b0 y b1
+                    100, 100, 100),  # límite superior para b0 y b1
+                  ncol = 3,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_bertalanffy_10ml <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_bertalanffy_10ml <- resultado_optimizacion_bertalanffy_10ml$par
+
+
+```
+
+```{r}
+modelo_bertalanffy_10ml <- data.frame(Volumen = c(20,40,60),predic = NA)
+
+b0 <- 19.13562587
+b1 <- 0.73731030 
+b2 <- 0.01912685
+
+for (i in 1:3) {
+  Volumen = c(20,40,60)
+  modelo_bertalanffy_10ml$predic[i] <- b0 * ((1 - b1 * exp(-b2 * (Volumen[i])))^3)
+}
+
+
+datos_10ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "blue")+
+  geom_line(data=modelo_bertalanffy_10ml,aes(x=Volumen,y=predic),colour="red")+
+  labs(title="Modelo bertalanffy")
+
+```
+
+
+###  Elección del mejor modelo
+
+```{r}
+datos_10ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "blue")+
+  geom_line(data=modelo_bertalanffy_10ml,aes(x=Volumen,y=predic),colour="red")+
+  geom_line(data=modelo_logistico_10ml,aes(x=Tiempo,y=predic),colour="black")
+```
+
+```{r}
+MSE <- cbind(bertalanffy = resultado_optimizacion_bertalanffy_10ml$value, gompertz =resultado_optimizacion_logistico_10ml$value)
+
+
+MSE %>%
+  kbl(caption = "MSE muestras de 10 ML") %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+```
+
+
+## Modelo para 20 ML
+
+
+###  Modelo logistico
+
+```{r}
+
+# Definir la función de ajuste
+modelo <- function(Tiempo, b0, b1) {
+  b0 / ((1 - exp(b1 * Tiempo))^(-1))
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  predicciones <- modelo(datos_20ml$Tiempo, b0, b1)
+  error <- sum((datos_20ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100, -100,    # límite inferior para b0 y b1
+                    100, 100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_logistico_20ml <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_logistico_20ml <- resultado_optimizacion_logistico_20ml$par
+
+
+```
+
+
+```{r}
+modelo_logistico_20ml <- data.frame(Tiempo = c(20,40,60) ,predic = NA)
+
+b0 <- 52.769255781
+b1 <- -0.004775715
+
+for (i in 1:3) {
+  Tiempo = c(20,40,60)
+  modelo_logistico_20ml$predic[i] <- b0 / ((1 - exp(b1 * (Tiempo[i])))^(-1))
+}
+
+datos_20ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "brown")+
+  geom_line(data=modelo_logistico_20ml,aes(x=Tiempo,y=predic))+
+  labs(title="Modelo logístico")
+
+```
+
+
+
+###  Modelo bertalanffy
+
+$$Y_i = \beta_0(1-\beta_1e^{-\beta_2*t_i})^3$$
+
+
+```{r}
+# Definir la función de ajuste
+modelo <- function(Tiempo, b0, b1, b2) {
+  b0 * ((1 - b1 * exp(-b2 * Tiempo))^3)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  b2 <- params[3]
+  predicciones <- modelo(datos_20ml$Tiempo, b0, b1,b2)
+  error <- sum((datos_20ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,-100 , -100,    # límite inferior para b0 y b1
+                    100, 100, 100),  # límite superior para b0 y b1
+                  ncol = 3,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_bertalanffy_20ml <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_bertalanffy_20ml <- resultado_optimizacion_bertalanffy_20ml$par
+
+```
+
+```{r}
+modelo_bertalanffy_20ml <- data.frame(Volumen = c(20,40,60),predic = NA)
+
+b0 <- 17.98791208
+b1 <- 0.69967171 
+b2 <- 0.03218443
+
+for (i in 1:3) {
+  Volumen = c(20,40,60)
+  modelo_bertalanffy_20ml$predic[i] <- b0 * ((1 - b1 * exp(-b2 * (Volumen[i])))^3)
+}
+
+
+datos_20ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "blue")+
+  geom_line(data=modelo_bertalanffy_20ml,aes(x=Volumen,y=predic),colour="red")+
+  labs(title="Modelo bertalanffy")
+
+```
+
+
+###  Elección del mejor modelo
+
+```{r}
+datos_20ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "blue")+
+  geom_line(data=modelo_bertalanffy_20ml,aes(x=Volumen,y=predic),colour="red")+
+  geom_line(data=modelo_logistico_20ml,aes(x=Volumen,y=predic),colour="black")
+```
+
+```{r}
+MSE_20ml <- cbind(bertalanffy = resultado_optimizacion_bertalanffy_20ml$value, Logistico =resultado_optimizacion_logistico_20ml$value)
+
+
+MSE_20ml %>%
+  kbl(caption = "MSE muestras de 20 ML") %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+```
+
+
+## Modelo para 30 ML
+
+
+###  Modelo logistico
+
+```{r}
+
+# Definir la función de ajuste
+modelo <- function(Tiempo, b0, b1) {
+  b0 / ((1 - exp(b1 * Tiempo))^(-1))
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  predicciones <- modelo(datos_30ml$Tiempo, b0, b1)
+  error <- sum((datos_30ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100, -100,    # límite inferior para b0 y b1
+                    100, 100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_logistico_30ml <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_logistico_30ml <- resultado_optimizacion_logistico_30ml$par
+
+
+```
+
+
+```{r}
+modelo_logistico_30ml <- data.frame(Tiempo = c(20,40,60) ,predic = NA)
+
+b0 <- 26.25341887
+b1 <- -0.05620117
+
+for (i in 1:3) {
+  Tiempo = c(20,40,60)
+  modelo_logistico_30ml$predic[i] <- b0 / ((1 - exp(b1 * (Tiempo[i])))^(-1))
+}
+
+datos_30ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "brown")+
+  geom_line(data=modelo_logistico_30ml,aes(x=Tiempo,y=predic))+
+  labs(title="Modelo logístico")
+
+```
+
+
+
+###  Modelo bertalanffy
+
+$$Y_i = \beta_0(1-\beta_1e^{-\beta_2*t_i})^3$$
+
+
+```{r}
+# Definir la función de ajuste
+modelo <- function(Tiempo, b0, b1, b2) {
+  b0 * ((1 - b1 * exp(-b2 * Tiempo))^3)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  b1 <- params[2]
+  b2 <- params[3]
+  predicciones <- modelo(datos_30ml$Tiempo, b0, b1,b2)
+  error <- sum((datos_30ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,-100 , -100,    # límite inferior para b0 y b1
+                    100, 100, 100),  # límite superior para b0 y b1
+                  ncol = 3,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_bertalanffy_30ml <- GenSA(fn = objetivo,
+                                lower = limites[1, ],
+                                upper = limites[2, ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_bertalanffy_30ml <- resultado_optimizacion_bertalanffy_30ml$par
+
+
+```
+
+```{r}
+modelo_bertalanffy_30ml <- data.frame(Volumen = c(20,40,60),predic = NA)
+
+b0 <- 100
+b1 <- 0.4732614 
+b2 <- 0.004539285
+
+for (i in 1:3) {
+  Volumen = c(20,40,60)
+  modelo_bertalanffy_30ml$predic[i] <- b0 * ((1 - b1 * exp(-b2 * (Volumen[i])))^3)
+}
+
+
+datos_30ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "blue")+
+  geom_line(data=modelo_bertalanffy_30ml,aes(x=Volumen,y=predic),colour="red")+
+  labs(title="Modelo bertalanffy")
+
+```
+
+
+###  Elección del mejor modelo
+
+```{r}
+datos_30ml %>% ggplot(aes(x=Tiempo, y=Volumen_derretido)) +
+  geom_point(colour= "blue")+
+  geom_line(data=modelo_bertalanffy_30ml,aes(x=Volumen,y=predic),colour="red")+
+  geom_line(data=modelo_logistico_30ml,aes(x=Volumen,y=predic),colour="black")
+```
+
+```{r}
+MSE_30ml <- cbind(bertalanffy = resultado_optimizacion_bertalanffy_30ml$value, Logistico =resultado_optimizacion_logistico_30ml$value)
+
+
+MSE_30ml %>%
+  kbl(caption = "MSE muestras de 30 ML") %>%
+  kable_styling(full_width = FALSE,latex_options = "HOLD_position") %>%
+  kable_classic()
+```
+
+
 
