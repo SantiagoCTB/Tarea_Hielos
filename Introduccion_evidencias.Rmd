@@ -165,62 +165,6 @@ ggplot(datos, aes(x = Tiempo, y = Volumen_derretido, color = as.factor(Valor_ini
   guides(color = guide_legend(override.aes = list(shape = 19))) 
 ```
 
-# Modelos 
-
-$$Y(t) = Y(0)\times e^{-\beta_0t}$$
-
-```{r}
-
-
-# Definir la función de ajuste
-modelo <- function(Valor_inicial, Tiempo, b0) {
-  Valor_inicial*exp(b0*Tiempo)
-}
-
-# Definir la función objetivo para la optimización
-objetivo <- function(params) {
-  b0 <- params[1]
-  predicciones <- modelo(datos_20ml$Valor_inicial, datos_20ml$Tiempo, b0)
-  error <- sum((datos_20ml$Volumen_derretido - predicciones)^2)
-  return(error)
-}
-
-# Definir límites para los parámetros
-limites <- matrix(c(-100,    # límite inferior para b0 y b1
-                    100),  # límite superior para b0 y b1
-                  ncol = 2,
-                  byrow = TRUE)
-
-# Ejecutar la optimización con GENSA
-resultado_optimizacion_20ml <- GenSA(fn = objetivo,
-                                lower = limites[,1 ],
-                                upper = limites[,2 ])
-
-# Obtener los valores óptimos de los parámetros
-valores_optimos_20ml <- resultado_optimizacion_20ml$par
-
-```
-
-
-
-
-
-```{r}
-ggplot(datos_20ml, aes(x = Tiempo)) +
-  geom_point(aes(y = Volumen_derretido), color = "red") +
-  geom_line(aes(y =  modelo(datos_20ml$Valor_inicial, datos_20ml$Tiempo, valores_optimos_20ml)), color = "red") +
-  labs(
-    x = "Tiempo",
-    y = "Volumen Derretido",
-    title = "Gráfico de Volumen Derretido vs. Tiempo"
-  ) +
-  theme_minimal()
-```
-
-
-
-
-
 # Modelos
 
 En el gráfico de los datos, las diferentes medidas para las cuales fueron tomados los datos, tienen un comportamiento diferente, por lo se decidió ajustar modelos diferentes para los recipientes con 10, 20 y 30 ml. Además de esto utilizamos dos modelos diferentes, como Bertalanffy y Gompertz, dado que en término de sus ecuaciones son más diferentes.
@@ -232,6 +176,55 @@ modelo_logistico <- nls(Volumen_derretido~SSlogis(Tiempo,Asym,b2,b3),data = dato
 Dado que la función **nls** ni **Optim** no converge por la cantidad de datos, se decidió ajustar los modelos con la librería **GENSA** dado que usualmente tiene mejor estabilidad que las otras funciones mencionadas anteriormente.
 
 ## Modelo para 10 ML
+
+### Modelo de decrecimiento muy popular
+
+$$Y(t) = Y(0)\times e^{-\beta_0t}$$
+
+```{r, echo = TRUE}
+
+
+# Definir la función de ajuste
+modelo <- function(Valor_inicial, Tiempo, b0) {
+  Valor_inicial*exp(-b0*Tiempo)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  predicciones <- modelo(datos_10ml$Valor_inicial, datos_10ml$Tiempo, b0)
+  error <- sum((datos_10ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,    # límite inferior para b0 y b1
+                    100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_10ml <- GenSA(fn = objetivo,
+                                lower = limites[,1 ],
+                                upper = limites[,2 ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_10ml <- resultado_optimizacion_10ml$par
+
+```
+
+```{r}
+ggplot(datos_10ml, aes(x = Tiempo)) +
+  geom_point(aes(y = Volumen_derretido), color = "brown") +
+  geom_line(aes(y =  modelo(datos_10ml$Valor_inicial, datos_10ml$Tiempo, valores_optimos_10ml)), color = "black") +
+  labs(
+    x = "Tiempo",
+    y = "Volumen Derretido",
+    title = "Modelo de decrecimiento muy popular"
+  ) +
+  theme_minimal()
+```
+
 
 ###  Modelo logistico
 
@@ -373,6 +366,54 @@ MSE %>%
 ## Modelo para 20 ML
 
 
+### Modelo de decrecimiento muy popular
+
+$$Y(t) = Y(0)\times e^{-\beta_0t}$$
+
+```{r, echo = TRUE}
+
+
+# Definir la función de ajuste
+modelo <- function(Valor_inicial, Tiempo, b0) {
+  Valor_inicial*exp(-b0*Tiempo)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  predicciones <- modelo(datos_20ml$Valor_inicial, datos_20ml$Tiempo, b0)
+  error <- sum((datos_20ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,    # límite inferior para b0 y b1
+                    100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_20ml <- GenSA(fn = objetivo,
+                                lower = limites[,1 ],
+                                upper = limites[,2 ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_20ml <- resultado_optimizacion_20ml$par
+
+```
+
+```{r}
+ggplot(datos_20ml, aes(x = Tiempo)) +
+  geom_point(aes(y = Volumen_derretido), color = "brown") +
+  geom_line(aes(y =  modelo(datos_20ml$Valor_inicial, datos_20ml$Tiempo, valores_optimos_20ml)), color = "black") +
+  labs(
+    x = "Tiempo",
+    y = "Volumen Derretido",
+    title = "Modelo de decrecimiento muy popular"
+  ) +
+  theme_minimal()
+```
+
 ###  Modelo logistico
 
 ```{r}
@@ -509,6 +550,53 @@ MSE_20ml %>%
 
 ## Modelo para 30 ML
 
+### Modelo de decrecimiento muy popular
+
+$$Y(t) = Y(0)\times e^{-\beta_0t}$$
+
+```{r, echo = TRUE}
+
+
+# Definir la función de ajuste
+modelo <- function(Valor_inicial, Tiempo, b0) {
+  Valor_inicial*exp(-b0*Tiempo)
+}
+
+# Definir la función objetivo para la optimización
+objetivo <- function(params) {
+  b0 <- params[1]
+  predicciones <- modelo(datos_30ml$Valor_inicial, datos_30ml$Tiempo, b0)
+  error <- sum((datos_30ml$Volumen_derretido - predicciones)^2)
+  return(error)
+}
+
+# Definir límites para los parámetros
+limites <- matrix(c(-100,    # límite inferior para b0 y b1
+                    100),  # límite superior para b0 y b1
+                  ncol = 2,
+                  byrow = TRUE)
+
+# Ejecutar la optimización con GENSA
+resultado_optimizacion_30ml <- GenSA(fn = objetivo,
+                                lower = limites[,1 ],
+                                upper = limites[,2 ])
+
+# Obtener los valores óptimos de los parámetros
+valores_optimos_30ml <- resultado_optimizacion_30ml$par
+
+```
+
+```{r}
+ggplot(datos_30ml, aes(x = Tiempo)) +
+  geom_point(aes(y = Volumen_derretido), color = "brown") +
+  geom_line(aes(y =  modelo(datos_30ml$Valor_inicial, datos_30ml$Tiempo, valores_optimos_30ml)), color = "black") +
+  labs(
+    x = "Tiempo",
+    y = "Volumen Derretido",
+    title = "Modelo de decrecimiento muy popular"
+  ) +
+  theme_minimal()
+```
 
 ###  Modelo logistico
 
@@ -646,3 +734,8 @@ MSE_30ml %>%
 
 
 
+# Conclusiones
+
+Gráficamente se ve que el modelo que se nombró como modelo de decrecimiento muy popular tiene un ajuste muy deficiente pues no captura la tendencia de los datos, los modelos Bertalanffy y Gompertz gráficamente parecer capturar bien la tendencia con un desemeño similar, cuando se pasa a comparar la medida de ajuste **MSE** el modelo Bertalanffy alcanza un menor valor, por lo que se prefiere este modelo.
+
+El modelo de crecimiento de Bertalanffy podría ser considerado como un primer paso hacia la creación de un modelo que pueda anticipar el proceso de fusión de los casquetes polares. Esto se debe a que se evidenció que tanto el tamaño del hielo como el tiempo de exposición tienen un impacto en el volumen de hielo derretido. Sin embargo, es fundamental resaltar que predecir el derretimiento de los casquetes polares es un desafío complejo debido a la amplia gama de factores externos que afectan este fenómeno y no se tuvieron en cuenta en este experimento. Por lo tanto, se necesita llevar a cabo una investigación más minuciosa y meticulosa, empleando una metodología bien establecida, para abordar completamente esta cuestión.
